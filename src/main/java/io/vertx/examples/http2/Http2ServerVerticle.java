@@ -13,6 +13,7 @@ import io.vertx.ext.web.handler.TemplateHandler;
 import io.vertx.ext.web.templ.HandlebarsTemplateEngine;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Http2ServerVerticle extends AbstractVerticle {
@@ -36,7 +37,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
             for (int i = 0; i < cols; i++) {
                 List<String> rowImgs = new ArrayList<>(rows);
                 for (int j = 0; j < rows; j++) {
-                    rowImgs.add("https://localhost:4043/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg");
+                    rowImgs.add("https://localhost:4043/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg?cachebuster=" + new Date().getTime());
                 }
                 imgs.add(rowImgs);
             }
