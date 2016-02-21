@@ -51,19 +51,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
     }
 
     private static JksOptions getJksOptions() {
-        return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
+        return new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble");
     }
 
-    private static String findFileOnClasspath(String fileName) {
-        URL url = Http2ServerVerticle.class.getClassLoader().getResource(fileName);
-        if (url == null) {
-            throw new IllegalArgumentException("Cannot find file " + fileName + " on classpath");
-        }
-        try {
-            File file = new File(url.toURI());
-            return file.getAbsolutePath();
-        } catch (URISyntaxException e) {
-            throw new VertxException(e);
-        }
-    }
 }
