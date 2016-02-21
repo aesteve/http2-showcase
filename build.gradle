@@ -24,6 +24,7 @@ if (!alpnJar.exists()) {
 dependencies {
 	compile 'io.vertx:vertx-core:3.3.0-SNAPSHOT'
 	compile 'io.vertx:vertx-web:3.3.0-SNAPSHOT'
+	compile "io.vertx:vertx-web-templ-handlebars:3.3.0-SNAPSHOT"
 
 	runtime "org.mortbay.jetty.alpn:alpn-project:$alpnVersion"
 }

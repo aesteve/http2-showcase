@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+    <body style="line-height: 1">
+        <table style="border-collapse: collapse; border-spacing:0">
+        {{#each imgs}}
+            <tr style="padding:0;border:none;margin:0;line-height:0">
+            {{#each this}}
+                <td style="border:1px dashed white;width:{{tileWidth}}px;height:{{tileHeight}}px;margin:0;padding:0"><img src="{{this}}" /></td>
+            {{/each}}
+            </tr>
+        {{/each}}
+        </table>
+    </body>
+</html>
