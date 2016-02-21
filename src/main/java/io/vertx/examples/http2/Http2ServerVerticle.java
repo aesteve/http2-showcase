@@ -6,6 +6,8 @@ import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.JksOptions;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.StaticHandler;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -19,7 +21,9 @@ public class Http2ServerVerticle extends AbstractVerticle {
     @Override
     public void start(Future<Void> future) {
         server = vertx.createHttpServer(createOptions());
-        server.requestHandler(req -> req.response().end("Hello world"));
+        Router router = Router.router(vertx);
+        router.get("/assets/*").handler(StaticHandler.create("web"));
+        server.requestHandler(router::accept);
         server.listen(res -> {
            if (res.failed()) {
                future.fail(res.cause());
