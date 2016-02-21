@@ -1,0 +1,23 @@
+plugins {
+	id 'java'
+	id 'application'
+}
+
+repositories {
+	mavenLocal()
+}
+
+dependencies {
+	compile 'io.vertx:vertx-core:3.3.0-SNAPSHOT'
+}
+
+mainClassName = 'io.vertx.core.Launcher'
+def mainVerticle = 'io.vertx.examples.http2.Http2ServerVerticle'
+
+run {
+	args = ['run', mainVerticle]
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '2.11'
+}
