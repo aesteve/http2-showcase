@@ -2,11 +2,11 @@ package io.vertx.examples.http2;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
-import static io.vertx.core.http.HttpHeaders.*;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.streams.Pump;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.TemplateHandler;
@@ -18,17 +18,62 @@ import java.util.List;
 
 public class Http2ServerVerticle extends AbstractVerticle {
 
-
-    private HttpServer server;
+    public final static int HTTP1_PORT = 4043;
+    public final static int HTTP2_PORT = 4044;
 
     private final static int cols = 15;
     private final static int rows = 15;
     private final static int TILE_HEIGHT = 38;
     private final static int TILE_WIDTH = 68;
 
+    private HttpServer http1;
+    private HttpServer http2;
+
+
     @Override
     public void start(Future<Void> future) {
-        server = vertx.createHttpServer(createOptions());
+        http1 = vertx.createHttpServer(createOptions(false));
+        http1.requestHandler(createRouter(false)::accept);
+        http1.listen(res -> {
+           if (res.failed()) {
+               future.fail(res.cause());
+           } else {
+               http2 = vertx.createHttpServer(createOptions(true));
+               http2.requestHandler(createRouter(true)::accept);
+               http2.listen(res2 -> {
+                  if (res2.failed()) {
+                      future.fail(res.cause());
+                  } else {
+                      future.complete();
+                  }
+               });
+           }
+        });
+    }
+
+    @Override
+    public void stop(Future<Void> future) {
+        if (http1 == null) {
+            future.complete();
+            return;
+        }
+        http1.close(future.completer());
+    }
+
+
+    private static HttpServerOptions createOptions(boolean http2) {
+        HttpServerOptions serverOptions = new HttpServerOptions()
+                .setPort(http2 ? HTTP2_PORT : HTTP1_PORT)
+                .setHost("localhost")
+                .setSsl(true)
+                .setKeyStoreOptions(getJksOptions());
+        if (http2) {
+            serverOptions.setUseAlpn(true);
+        }
+        return serverOptions;
+    }
+
+    private Router createRouter(boolean http2) {
         Router router = Router.router(vertx);
         HandlebarsTemplateEngine engine = HandlebarsTemplateEngine.create();
         engine.setMaxCacheSize(0);
@@ -37,7 +82,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
             for (int i = 0; i < cols; i++) {
                 List<String> rowImgs = new ArrayList<>(rows);
                 for (int j = 0; j < rows; j++) {
-                    rowImgs.add("https://localhost:4043/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg?cachebuster=" + new Date().getTime());
+                    rowImgs.add("/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg?cachebuster=" + new Date().getTime());
                 }
                 imgs.add(rowImgs);
             }
@@ -47,42 +92,26 @@ public class Http2ServerVerticle extends AbstractVerticle {
             ctx.next();
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
-        router.get("/assets/*").handler(ctx -> {
-           MultiMap headers = ctx.response().headers();
-            headers.add(EXPIRES, "0");
-            headers.add(CACHE_CONTROL, "no-cache, no-store, must-revalidate");
-            ctx.next();
-        });
-        router.get("/assets/*").handler(StaticHandler.create().setCachingEnabled(false));
-        server.requestHandler(router::accept);
-        server.listen(res -> {
-           if (res.failed()) {
-               future.fail(res.cause());
-           } else {
-               future.complete();
-           }
-        });
-    }
-
-    @Override
-    public void stop(Future<Void> future) {
-        if (server == null) {
-            future.complete();
-            return;
+        if (http2) {
+            router.get("/assets/*").handler(ctx -> {
+                HttpServerResponse response = ctx.response();
+                String path = ctx.request().path();
+                String assetPath = "webroot/" + path.substring(8, path.length());
+                vertx.fileSystem().open(assetPath, new OpenOptions().setRead(true), res -> {
+                    if (res.failed()) {
+                        response.setStatusCode(404);
+                        response.end("File " + assetPath + " not found");
+                        return;
+                    }
+                    AsyncFile file = res.result();
+                    response.setChunked(true);
+                    Pump.pump(file, response).start();
+                });
+            });
+        } else {
+            router.get("/assets/*").handler(StaticHandler.create());
         }
-        server.close(future.completer());
-    }
-
-
-    private static HttpServerOptions createOptions() {
-        HttpServerOptions serverOptions = new HttpServerOptions()
-                .setPort(4043)
-                .setHost("localhost")
-                //.setUseAlpn(true)
-                .setSsl(true)
-                .setKeyStoreOptions(getJksOptions());
-        return serverOptions;
-
+        return router;
     }
 
     private static JksOptions getJksOptions() {
