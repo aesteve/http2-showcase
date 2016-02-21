@@ -35,12 +35,6 @@ run {
 
 }
 
-task listJars << {
-	configurations.runtime.each {
-		println it
-	}
-}
-
 task wrapper(type: Wrapper) {
 	gradleVersion = '2.11'
 }
