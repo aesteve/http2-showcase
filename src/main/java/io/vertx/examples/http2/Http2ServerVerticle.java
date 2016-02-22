@@ -28,36 +28,34 @@ public class Http2ServerVerticle extends AbstractVerticle {
 
     private HttpServer http1;
     private HttpServer http2;
+    private Router router;
 
 
     @Override
     public void start(Future<Void> future) {
+        createRouter();
         http1 = vertx.createHttpServer(createOptions(false));
-        http1.requestHandler(createRouter(false)::accept);
+        http1.requestHandler(router::accept);
         http1.listen(res -> {
-           if (res.failed()) {
-               future.fail(res.cause());
-           } else {
-               http2 = vertx.createHttpServer(createOptions(true));
-               http2.requestHandler(createRouter(true)::accept);
-               http2.listen(res2 -> {
-                  if (res2.failed()) {
-                      future.fail(res.cause());
-                  } else {
-                      future.complete();
-                  }
-               });
-           }
+            if (res.failed()) {
+                future.fail(res.cause());
+                return;
+            }
+            http2 = vertx.createHttpServer(createOptions(true));
+            http2.requestHandler(router::accept);
+            http2.listen(res2 -> {
+                if (res2.failed()) {
+                    future.fail(res.cause());
+                } else {
+                    future.complete();
+                }
+            });
         });
     }
 
     @Override
     public void stop(Future<Void> future) {
-        if (http1 == null) {
-            future.complete();
-            return;
-        }
-        http1.close(future.completer());
+        http1.close(res -> http2.close(future.completer()));
     }
 
 
@@ -73,8 +71,8 @@ public class Http2ServerVerticle extends AbstractVerticle {
         return serverOptions;
     }
 
-    private Router createRouter(boolean http2) {
-        Router router = Router.router(vertx);
+    private void createRouter() {
+        router = Router.router(vertx);
         HandlebarsTemplateEngine engine = HandlebarsTemplateEngine.create();
         engine.setMaxCacheSize(0);
         router.getWithRegex(".+\\.hbs").handler(ctx -> {
@@ -93,7 +91,6 @@ public class Http2ServerVerticle extends AbstractVerticle {
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
         router.get("/assets/*").handler(StaticHandler.create());
-        return router;
     }
 
     private static JksOptions getJksOptions() {

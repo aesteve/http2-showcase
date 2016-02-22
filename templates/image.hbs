@@ -1,5 +1,15 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <script>
+            var start = new Date().getTime();
+            window.onload = function() {
+                var end = new Date().getTime();
+                var total = end - start;
+                document.querySelector('#time').innerHTML = 'Loaded in: ' + total + ' ms';
+            };
+        </script>
+    </head>
     <body style="line-height: 1">
         <table style="border-collapse: collapse; border-spacing:0">
         {{#each imgs}}
@@ -9,6 +19,7 @@
             {{/each}}
             </tr>
         {{/each}}
+        <p id="time">Loading...</p>
         </table>
     </body>
 </html>
