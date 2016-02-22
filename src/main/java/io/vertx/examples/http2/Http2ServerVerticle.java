@@ -76,11 +76,15 @@ public class Http2ServerVerticle extends AbstractVerticle {
         HandlebarsTemplateEngine engine = HandlebarsTemplateEngine.create();
         engine.setMaxCacheSize(0);
         router.getWithRegex(".+\\.hbs").handler(ctx -> {
+            long latency = 0;
+            try {
+                latency = Long.valueOf(ctx.request().getParam("latency"));
+            } catch(NumberFormatException nfe) {}
             List<List<String>> imgs = new ArrayList<>(cols);
             for (int i = 0; i < cols; i++) {
                 List<String> rowImgs = new ArrayList<>(rows);
                 for (int j = 0; j < rows; j++) {
-                    rowImgs.add("/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg?cachebuster=" + new Date().getTime());
+                    rowImgs.add("/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg?latency=" + latency + "&cachebuster=" + new Date().getTime());
                 }
                 imgs.add(rowImgs);
             }
@@ -90,6 +94,18 @@ public class Http2ServerVerticle extends AbstractVerticle {
             ctx.next();
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
+        router.get("/assets/*").handler(ctx -> {
+           vertx.executeBlocking(fut -> {
+               long latency = 0;
+               try {
+                   latency = Long.valueOf(ctx.request().getParam("latency"));
+                   Thread.sleep(latency);
+               } catch(Exception e) {}
+               finally {
+                   fut.complete();
+               }
+           }, res -> ctx.next());
+        });
         router.get("/assets/*").handler(StaticHandler.create());
     }
 
