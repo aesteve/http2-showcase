@@ -9,7 +9,6 @@ def alpnVersion = '8.1.7.v20160121'
 
 repositories {
 	mavenLocal()
-	mavenCentral()
 }
 
 def repoPath = Paths.get repositories.mavenLocal().url

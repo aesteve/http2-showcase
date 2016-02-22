@@ -92,25 +92,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
             ctx.next();
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
-        if (http2) {
-            router.get("/assets/*").handler(ctx -> {
-                HttpServerResponse response = ctx.response();
-                String path = ctx.request().path();
-                String assetPath = "webroot/" + path.substring(8, path.length());
-                vertx.fileSystem().open(assetPath, new OpenOptions().setRead(true), res -> {
-                    if (res.failed()) {
-                        response.setStatusCode(404);
-                        response.end("File " + assetPath + " not found");
-                        return;
-                    }
-                    AsyncFile file = res.result();
-                    response.setChunked(true);
-                    Pump.pump(file, response).start();
-                });
-            });
-        } else {
-            router.get("/assets/*").handler(StaticHandler.create());
-        }
+        router.get("/assets/*").handler(StaticHandler.create());
         return router;
     }
 
