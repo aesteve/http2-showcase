@@ -94,6 +94,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
             ctx.next();
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
+        /*
         router.get("/assets/*").handler(ctx -> {
            vertx.executeBlocking(fut -> {
                long latency = 0;
@@ -106,6 +107,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
                }
            }, res -> ctx.next());
         });
+        */
         router.get("/assets/*").handler(StaticHandler.create());
     }
 
