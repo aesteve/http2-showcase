@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Http2ServerVerticle extends AbstractVerticle {
 
@@ -28,7 +30,8 @@ public class Http2ServerVerticle extends AbstractVerticle {
     private HttpServer http1;
     private HttpServer http2;
     private Router router;
-
+    private static final int DEFAULT_LATENCY = 100;
+    private String host = "localhost"; // TODO : check host if in the cloud
 
     @Override
     public void start(Future<Void> future) {
@@ -58,10 +61,10 @@ public class Http2ServerVerticle extends AbstractVerticle {
     }
 
 
-    private static HttpServerOptions createOptions(boolean http2) {
+    private HttpServerOptions createOptions(boolean http2) {
         HttpServerOptions serverOptions = new HttpServerOptions()
             .setPort(http2 ? HTTP2_PORT : HTTP1_PORT)
-            .setHost("localhost")
+            .setHost(host)
             .setSsl(true)
             .setKeyStoreOptions(getJksOptions());
         if (http2) {
@@ -75,27 +78,43 @@ public class Http2ServerVerticle extends AbstractVerticle {
         HandlebarsTemplateEngine engine = HandlebarsTemplateEngine.create();
         engine.setMaxCacheSize(0);
         router.get("/*").handler(rc -> {
-          vertx.setTimer(140, id -> rc.next());
+          int queryLatency = DEFAULT_LATENCY;
+          try {
+            queryLatency = Integer.valueOf(rc.request().getParam("latency"));
+          } catch(NumberFormatException nfe) {}
+          rc.put("query-latency", queryLatency);
+          vertx.setTimer(queryLatency, id -> rc.next());
         });
         router.getWithRegex(".+\\.hbs").handler(ctx -> {
-            List<List<String>> imgs = new ArrayList<>(COLS);
-            for (int i = 0; i < COLS; i++) {
-                List<String> rowImgs = new ArrayList<>(ROWS);
-                for (int j = 0; j < ROWS; j++) {
-                    rowImgs.add("/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg?cachebuster=" + cacheBuster());
-                }
-                imgs.add(rowImgs);
-            }
-            ctx.put("imgs", imgs);
+            final Stream<Integer> availableLatencies = Stream.of(100, 200, 300, 400);
+            Integer queryLatency = ctx.get("query-latency");
+            ctx.put("imgs", createImages(queryLatency));
             ctx.put("tileHeight", TILE_HEIGHT);
             ctx.put("tileWidth", TILE_WIDTH);
+            ctx.put("host", host);
+            ctx.put("http1Port", HTTP1_PORT);
+            ctx.put("http2Port", HTTP2_PORT);
+            Stream<DisplayedLatency> displayedLatencies = availableLatencies.map(latency -> new DisplayedLatency(latency, queryLatency));
+            ctx.put("latencies", displayedLatencies.collect(Collectors.toList()));
             ctx.next();
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
         router.get("/assets/*").handler(StaticHandler.create());
     }
 
-    private String cacheBuster() {
+  private List<List<String>> createImages(Integer latency) {
+    List<List<String>> imgs = new ArrayList<>(COLS);
+    for (int i = 0; i < COLS; i++) {
+      List<String> rowImgs = new ArrayList<>(ROWS);
+      for (int j = 0; j < ROWS; j++) {
+        rowImgs.add("/assets/img/stairway_to_heaven-" + i + "-" + j + ".jpeg?latency=" + latency + "&cachebuster=" + cacheBuster());
+      }
+      imgs.add(rowImgs);
+    }
+    return imgs;
+  }
+
+  private String cacheBuster() {
         return Long.toString(new Date().getTime()) + RANDOM.nextLong();
     }
 
