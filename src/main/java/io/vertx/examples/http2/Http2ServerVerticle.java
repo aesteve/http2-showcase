@@ -56,7 +56,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
   @Override
   public void start(Future<Void> future) {
     createRouter();
-    http = vertx.createHttpServer(createOptions(false));
+    http = vertx.createHttpServer(createOptions());
     http.requestHandler(router::accept);
     http.listen(res -> {
       if (res.failed()) {
