@@ -74,6 +74,9 @@ public class Http2ServerVerticle extends AbstractVerticle {
         router = Router.router(vertx);
         HandlebarsTemplateEngine engine = HandlebarsTemplateEngine.create();
         engine.setMaxCacheSize(0);
+        router.get("/*").handler(rc -> {
+          vertx.setTimer(140, id -> rc.next());
+        });
         router.getWithRegex(".+\\.hbs").handler(ctx -> {
             List<List<String>> imgs = new ArrayList<>(COLS);
             for (int i = 0; i < COLS; i++) {
@@ -89,9 +92,6 @@ public class Http2ServerVerticle extends AbstractVerticle {
             ctx.next();
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
-        router.get("/assets/*").handler(rc -> {
-          vertx.setTimer(140, id -> rc.next());
-        });
         router.get("/assets/*").handler(StaticHandler.create());
     }
 
