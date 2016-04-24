@@ -1,24 +1,25 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script>
-            var start = new Date().getTime();
-            window.onload = function() {
-                var end = new Date().getTime();
-                var total = end - start;
-                document.querySelector('#time').innerHTML = 'Loaded in: ' + total + ' ms';
-            };
-        </script>
+
     </head>
-    <body style="line-height: 1">
+    <body onload="showtimes()">
         <p>
         {{#each imgs}}
             {{#each this}}
-                <img width="{{tileWidth}}" height="{{tileHeight}}" src="{{this}}" style="border:none;margin:0" />
+                <img width="{{tileWidth}}" height="{{tileHeight}}" src="{{this}}" />
             {{/each}}
             <br/>
         {{/each}}
         </p>
         <p id="time">Loading...</p>
+        <script>
+            function showtimes() {
+                var times = 'Times from connection start:<br>';
+                times += 'DOM loaded: ' + (window.performance.timing.domContentLoadedEventEnd - window.performance.timing.connectStart) + 'ms<br>';
+                times += 'DOM complete (images loaded): ' + (window.performance.timing.domComplete - window.performance.timing.connectStart) + 'ms<br>';
+                document.getElementById('time').innerHTML = times;
+            }
+        </script>
     </body>
 </html>
