@@ -89,6 +89,9 @@ public class Http2ServerVerticle extends AbstractVerticle {
             ctx.next();
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
+        router.get("/assets/*").handler(rc -> {
+          vertx.setTimer(140, id -> rc.next());
+        });
         router.get("/assets/*").handler(StaticHandler.create());
     }
 
