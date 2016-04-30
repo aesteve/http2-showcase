@@ -71,6 +71,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
     if (http2) {
       serverOptions
           .setSslEngine(SSLEngine.OPENSSL)
+          .setUseAlpn(true)
           .setPemKeyCertOptions(getPemOptions());
     } else {
       serverOptions.setKeyStoreOptions(getJksOptions());
@@ -91,6 +92,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
       vertx.setTimer(queryLatency, id -> rc.next());
     });
     router.getWithRegex(".+\\.hbs").handler(ctx -> {
+      System.out.println(ctx.request().version());
       final Stream<Integer> availableLatencies = Stream.of(100, 200, 300, 400);
       Integer queryLatency = ctx.get("query-latency");
       ctx.put("imgs", createImages(queryLatency));
