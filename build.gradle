@@ -6,19 +6,9 @@ plugins {
 	id 'com.github.johnrengelman.shadow' version '1.2.3'
 }
 
-def alpnVersion = '8.1.7.v20160121'
-
 repositories {
 	mavenLocal()
-}
-
-def repoPath = Paths.get repositories.mavenLocal().url
-def alpnJar = new File("${repoPath}/org/mortbay/jetty/alpn/alpn-boot/${alpnVersion}/alpn-boot-${alpnVersion}.jar")
-
-// TODO : create a task "checkAlpnJar" and run.dependsOn(checkAlpnJar)
-// no need to check when compiling
-if (!alpnJar.exists()) {
-	throw new GradleScriptException("ALPN jar $alpnJar not found", null)
+	mavenCentral()
 }
 
 dependencies {
@@ -26,12 +16,11 @@ dependencies {
 	compile 'io.vertx:vertx-web:3.3.0-SNAPSHOT'
 	compile "io.vertx:vertx-web-templ-handlebars:3.3.0-SNAPSHOT"
 
-	runtime "org.mortbay.jetty.alpn:alpn-project:$alpnVersion"
+	runtime "io.netty:netty-tcnative-boringssl-static:1.1.33.Fork17"
 }
 
 mainClassName = 'io.vertx.core.Launcher'
 def mainVerticle = 'io.vertx.examples.http2.Http2ServerVerticle'
-applicationDefaultJvmArgs = [ "-Xbootclasspath/p:$alpnJar.absolutePath"]
 
 run {
 	args = ['run', mainVerticle]

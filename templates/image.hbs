@@ -43,7 +43,7 @@
                 {{#each latencies}}
                     <tr {{#if this.displayed}}class="displayed"{{/if}}>
                         <td style="text-align: right">{{this.latency}}ms</td>
-                        <td style="text-align: center"><a href="https://{{host}}:{{http1Port}}/image.hbs?latency={{this.latency}}">HTTP 1.1</a></td>
+                        <td style="text-align: center"><a href="http://{{host}}:{{http1Port}}/image.hbs?latency={{this.latency}}">HTTP 1.1</a></td>
                         <td style="text-align: center"><a href="https://{{host}}:{{http2Port}}/image.hbs?latency={{this.latency}}">HTTP 2</a></td>
                     </tr>
                 {{/each}}
