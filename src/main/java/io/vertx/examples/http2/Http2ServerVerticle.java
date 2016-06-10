@@ -3,7 +3,9 @@ package io.vertx.examples.http2;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
-import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.TemplateHandler;
@@ -18,8 +20,8 @@ import java.util.stream.Stream;
 
 public class Http2ServerVerticle extends AbstractVerticle {
 
-    private static final int HTTP1_PORT = 4043;
-    private static final int HTTP2_PORT = 4044;
+    private static final int HTTP1_PORT = 8080;
+    private static final int HTTP2_PORT = 8443;
 
     private static final int COLS = 15;
     private static final int ROWS = 15;
@@ -29,22 +31,20 @@ public class Http2ServerVerticle extends AbstractVerticle {
 
     private HttpServer http1;
     private HttpServer http2;
-    private Router router;
-    private static final int DEFAULT_LATENCY = 100;
+    private static final int DEFAULT_LATENCY = 70;
     private String host = "localhost"; // TODO : check host if in the cloud
 
     @Override
     public void start(Future<Void> future) {
-        createRouter();
         http1 = vertx.createHttpServer(createOptions(false));
-        http1.requestHandler(router::accept);
+        http1.requestHandler(createRouter("http://localhost:8080/image.hbs")::accept);
         http1.listen(res -> {
             if (res.failed()) {
                 future.fail(res.cause());
                 return;
             }
             http2 = vertx.createHttpServer(createOptions(true));
-            http2.requestHandler(router::accept);
+            http2.requestHandler(createRouter("https://localhost:8443/image.hbs")::accept);
             http2.listen(res2 -> {
                 if (res2.failed()) {
                     future.fail(res.cause());
@@ -64,17 +64,18 @@ public class Http2ServerVerticle extends AbstractVerticle {
     private HttpServerOptions createOptions(boolean http2) {
         HttpServerOptions serverOptions = new HttpServerOptions()
             .setPort(http2 ? HTTP2_PORT : HTTP1_PORT)
-            .setHost(host)
-            .setSsl(true)
-            .setKeyStoreOptions(getJksOptions());
+            .setHost(host);
         if (http2) {
-            serverOptions.setUseAlpn(true);
+            serverOptions.setSsl(true)
+                .setSslEngineOptions(new OpenSSLEngineOptions())
+                .setKeyCertOptions(getJksOptions())
+                .setUseAlpn(true);
         }
         return serverOptions;
     }
 
-    private void createRouter() {
-        router = Router.router(vertx);
+    private Router createRouter(String redirectURL) {
+        Router router = Router.router(vertx);
         HandlebarsTemplateEngine engine = HandlebarsTemplateEngine.create();
         engine.setMaxCacheSize(0);
         router.get("/*").handler(rc -> {
@@ -83,10 +84,14 @@ public class Http2ServerVerticle extends AbstractVerticle {
             queryLatency = Integer.valueOf(rc.request().getParam("latency"));
           } catch(NumberFormatException nfe) {}
           rc.put("query-latency", queryLatency);
-          vertx.setTimer(queryLatency, id -> rc.next());
+          if (queryLatency == 0) {
+            rc.next();
+          } else {
+            vertx.setTimer(queryLatency, id -> rc.next());
+          }
         });
         router.getWithRegex(".+\\.hbs").handler(ctx -> {
-            final Stream<Integer> availableLatencies = Stream.of(100, 200, 300, 400);
+            final Stream<Integer> availableLatencies = Stream.of(0, 20, 40, 60, 80, 100);
             Integer queryLatency = ctx.get("query-latency");
             ctx.put("imgs", createImages(queryLatency));
             ctx.put("tileHeight", TILE_HEIGHT);
@@ -100,6 +105,13 @@ public class Http2ServerVerticle extends AbstractVerticle {
         });
         router.getWithRegex(".+\\.hbs").handler(TemplateHandler.create(engine));
         router.get("/assets/*").handler(StaticHandler.create());
+        router.get("/").handler(ctx -> {
+          ctx.response().
+              setStatusCode(302).
+              putHeader("Location", redirectURL).
+              end();
+        });
+      return router;
     }
 
   private List<List<String>> createImages(Integer latency) {
@@ -118,8 +130,8 @@ public class Http2ServerVerticle extends AbstractVerticle {
         return Long.toString(new Date().getTime()) + RANDOM.nextLong();
     }
 
-    private static JksOptions getJksOptions() {
-        return new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble");
+    private static KeyCertOptions getJksOptions() {
+        return new PemKeyCertOptions().setCertPath("tls/server-cert.pem").setKeyPath("tls/server-key.pem");
     }
 
 }

@@ -6,15 +6,15 @@ To run the project, simply run `./gradlew run` from the project's root directory
 
 Two HTTP servers are running:
 
-* An HTTP/1.1 server running on port 4043
-* An HTTP/2 server running on port 4044
+* An HTTP/1.1 server running on http://localhost:8080
+* An HTTP/2 server running on port https:/localhost:8443
 
 They both are running the exact same code, the only difference is that the second one has been declared with a specific option : `setUseAlpn(true)`.
 
 By default, when running on your local machine, a latency of 100ms is arbitrarily simulated. So that you can figure out the difference it makes in a real-life environment.
 You can change the latency by clicking on the links on the right of the image, or by adding a query parameter named `latency` to the page's URL.
 
-e.g. [https://localhost:4043/image.hbs?latency=999](https://localhost:4043/image.hbs?latency=999)
+e.g. [http://localhost:8080/image.hbs?latency=999](http://localhost:8080/image.hbs?latency=999)
 
 The project uses :
 * [Vert.x](http://vertx.io)
