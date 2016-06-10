@@ -4,7 +4,6 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.StaticHandler;
@@ -67,8 +66,7 @@ public class Http2ServerVerticle extends AbstractVerticle {
             .setHost(host);
         if (http2) {
             serverOptions.setSsl(true)
-                .setSslEngineOptions(new OpenSSLEngineOptions())
-                .setKeyCertOptions(getJksOptions())
+                .setKeyCertOptions(new PemKeyCertOptions().setCertPath("tls/server-cert.pem").setKeyPath("tls/server-key.pem"))
                 .setUseAlpn(true);
         }
         return serverOptions;
@@ -128,10 +126,6 @@ public class Http2ServerVerticle extends AbstractVerticle {
 
   private String cacheBuster() {
         return Long.toString(new Date().getTime()) + RANDOM.nextLong();
-    }
-
-    private static KeyCertOptions getJksOptions() {
-        return new PemKeyCertOptions().setCertPath("tls/server-cert.pem").setKeyPath("tls/server-key.pem");
     }
 
 }
