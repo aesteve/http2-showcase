@@ -2,6 +2,7 @@ package io.vertx.examples.http2;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -127,5 +128,9 @@ public class Http2ServerVerticle extends AbstractVerticle {
   private String cacheBuster() {
         return Long.toString(new Date().getTime()) + RANDOM.nextLong();
     }
+
+  public static void main(String... args) {
+      Vertx.vertx().deployVerticle(Http2ServerVerticle.class.getName());
+  }
 
 }

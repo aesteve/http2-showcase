@@ -1,22 +1,19 @@
-import java.nio.file.Paths
-
 plugins {
 	id 'java'
 	id 'application'
-	id 'com.github.johnrengelman.shadow' version '1.2.3'
+//	id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
 repositories {
 	mavenLocal()
-	mavenCentral()
 }
 
 dependencies {
-	compile 'io.vertx:vertx-core:3.3.0-SNAPSHOT'
-	compile 'io.vertx:vertx-web:3.3.0-SNAPSHOT'
-	compile "io.vertx:vertx-web-templ-handlebars:3.3.0-SNAPSHOT"
+	compile "io.vertx:vertx-core:$vertxVersion"
+	compile "io.vertx:vertx-web:$vertxVersion"
+	compile "io.vertx:vertx-web-templ-handlebars:$vertxVersion"
 
-	runtime "io.netty:netty-tcnative-boringssl-static:1.1.33.Fork17"
+	runtime "io.netty:netty-tcnative-boringssl-static:1.1.33.Fork26"
 }
 
 mainClassName = 'io.vertx.core.Launcher'
@@ -24,9 +21,8 @@ def mainVerticle = 'io.vertx.examples.http2.Http2ServerVerticle'
 
 run {
 	args = ['run', mainVerticle]
-
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '2.12'
+	gradleVersion = '3.5'
 }
