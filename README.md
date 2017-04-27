@@ -7,7 +7,7 @@ To run the project, simply run `./gradlew run` from the project's root directory
 Two HTTP servers are running:
 
 * An HTTP/1.1 server running on http://localhost:8080
-* An HTTP/2 server running on port https:/localhost:8443
+* An HTTP/2 server running on port https://localhost:8443
 
 They both are running the exact same code, the only difference is that the second one has been declared with a specific option : `setUseAlpn(true)`.
 
