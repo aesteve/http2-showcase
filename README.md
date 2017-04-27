@@ -2,12 +2,12 @@
 
 This projects aims at showing [Vert.x](http://vertx.io) [HTTP/2](https://en.wikipedia.org/wiki/HTTP/2) capabilities.
 
-To run the project, simply run `./gradlew run` from the project's root directory, then point your browser at [https://localhost:4043/image.hbs](https://localhost:4043/image.hbs) to get started.
+To run the project, simply run `./gradlew run` from the project's root directory, then point your browser at [http://localhost:8080](http://localhost:8080) to get started.
 
 Two HTTP servers are running:
 
 * An HTTP/1.1 server running on http://localhost:8080
-* An HTTP/2 server running on port https://localhost:8443
+* An HTTP/2 server running on https://localhost:8443
 
 They both are running the exact same code, the only difference is that the second one has been declared with a specific option : `setUseAlpn(true)`.
 
